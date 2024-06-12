@@ -23,7 +23,7 @@ class SXFlasher():
         self.sud = sud
         if not self.sud:
             self.sud = somcusb.SomcUsbDevice(loglevel = loglevel)
-        self.erase_userdata = False
+        self.erase_user_data = False
 
     def connect(self):
         if self.test < 100:
@@ -364,8 +364,9 @@ class SXFlasher():
         ret = self.check_in_updatexml(sinfn)
         log.debug(f'check_in_updatexml("{sinfn}") => "{ret}"')
         if ret and ret == 'NOERASE':
-            log.debug(f'  Skip SIN-file "{sinfn}". Reason: update.xml = "{ret}"')
-            return
+            if not self.erase_user_data:
+                log.debug(f'  Skip SIN-file "{sinfn}". Reason: update.xml = "{ret}" and erase_user_data is False')
+                return
 
         if sinsize < 512:
             raise RuntimeError(f'Incorrect SIN-file size: {sinsize} bytes')
@@ -498,6 +499,16 @@ class SXFlasher():
                 raise RuntimeError(f'Incorrect ta-file "{tafn}"! Too many units. Expected <= {max_units}')
             
         for tau in taulist:
+            if tau.part == 2:
+                if tau.code in [ 2003,    # hw config
+                                 2010,    # simlock
+                                 2129,    # simlock signature
+                                 2210,    # PHONE_NAME
+                                 4900,    # SERIAL_NO 
+                                 66667,   # DEVICE_KEY
+                    ]:
+                    log.debug(f'  Skip TA unit from "{tafn}". Reason: unit [2:{tau.code}] are special!')
+                    continue
             cmd = f'Write-TA:{tau.part}:{tau.code}'
             log.info(f'CMD: {cmd}   <size = {len(tau.value)}>')
             if self.test:
@@ -526,8 +537,8 @@ class SXFlasher():
             log.warn(f'Directory "{pdir}" not found!')
         else:
             plst = self.get_partition_list('xml')
-            #if not plst:
-            #    plst = self.get_partition_list('dir')  # currently not supported 
+            if not plst:
+                plst = self.get_partition_list('dir')
             if not plst:
                 raise RuntimeError(f'Partition SINs not founded!')
             
@@ -577,10 +588,11 @@ class SXFlasher():
                 ret = self.check_in_updatexml(fn)
                 log.debug(f'check_in_updatexml("{fn}") => "{ret}"')
                 if ret and ret == 'NOERASE':
-                    log.debug(f'  Skip TA-file "{fn}". Reason: update.xml = "{ret}"')
-                    continue
-                else:
-                    self.process_ta(filename, max_units = 1)
+                    if not self.erase_user_data:
+                        log.debug(f'  Skip TA-file "{fn}". Reason: update.xml = "{ret}" and erase_user_data is False')
+                        continue
+                
+                self.process_ta(filename, max_units = 1)
         
         # ------------ xboot image ----------------------------------------
         bd = self.get_boot_delivery()
@@ -677,7 +689,7 @@ class SXFlasher():
         else:
             rt = sud.read_timeout
             wt = sud.write_timeout
-            sud.read_timeout = 10*1000   # 10 seconds
+            sud.read_timeout  = 10*1000  # 10 seconds
             sud.write_timeout = 10*1000  # 10 seconds
 
             ret = sud.command('Sync')
@@ -701,6 +713,7 @@ if __name__ == '__main__':
     parser.add_option("", "--rt", dest = "read_timeout", default = 500, type = "int")
     parser.add_option("", "--wt", dest = "write_timeout", default = 1000, type = "int")
     parser.add_option("-v", "--verbose", dest = "verbose", default = 1, type = "int")
+    parser.add_option("-e", "--eud", dest = "erase_user_data", action="store_true", default = False)
     (opt, args) = parser.parse_args() 
     
     if not opt.dir:
@@ -727,6 +740,8 @@ if __name__ == '__main__':
         sxf.sud.read_timeout = rt
         log.info(f'Set write timeout = {wt} ms')
         sxf.sud.write_timeout = wt
+        
+        sxf.erase_user_data = opt.erase_user_data
         
         sxf.flash_stock(opt.dir)
     

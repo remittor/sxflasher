@@ -17,23 +17,26 @@ _tau[1][1877]  = 'RF_BC_CFG'      # 0x755
 _tau[1][6828]  = 'LTE_BC_CFG'     # 0x1AAC
 
 _tau[2][2002]  = 'FLA_FLA'        # 0x7D2  # what is flafla?
-_tau[2][2003]  = 'S1_LDR'         # 0x7D3  # hw conf
-_tau[2][2010]  = 'SENS_DATA'      # 0x7DA  # simlock, bootloader unlock allowed, etc.
+_tau[2][2003]  = 'HW_CONF'        # 0x7D3  # "S1_LDR" "S1_HWConf" "x_conf_hwconfig"
+_tau[2][2010]  = 'SIMLOCK'        # 0x7DA  # simlock, bootloader unlock allowed, etc.
 _tau[2][2021]  = 'DRM_KEY_STATUS' # 0x7E5
 
 _tau[2][2022]  = 'BLOB_0'         # 0x7E6  # marlin
 _tau[2][2023]  = 'BLOB_1'         # 0x7E7  # ckb
 _tau[2][2024]  = 'BLOB_2'         # 0x7E8  # widevine
-_tau[2][2025]  = 'BLOB_3'         # 0x7E9
+_tau[2][2025]  = 'BLOB_3'         # 0x7E9  # HDCP
 
 _tau[2][2036]  = 'BLOB_E'         # 0x7F4
 
-_tau[2][2024]  = 'SRM'            # 0x7F8
-
+_tau[2][2040]  = 'DRM_DYN_DATA'   # 0x7F8
 _tau[2][2050]  = 'LAST_BOOT_LOG'  # 0x802
+_tau[2][2053]  = 'BOOT_COUNTER'   # 0x805
+_tau[2][2099]  = 'DRM_CUST'       # 0x833
 
-_tau[2][2128]  = '__2128'         # 0x850
-_tau[2][2129]  = '__2129'         # 0x851
+_tau[2][2128]  = '__2128'            # 0x850  uint32_t
+_tau[2][2129]  = 'SIMLOCK_SIGNATURE' # 0x851  "S1_SL"
+
+_tau[2][2160]  = 'S1_GCodes'      # 0x870
 
 _tau[2][2141]  = 'MACHINE_ID'     # 0x85D
 
@@ -46,35 +49,96 @@ _tau[2][2209]  = 'BUILD_TYPE'     # 0x8A1
 _tau[2][2210]  = 'PHONE_NAME'     # 0x8A2
 _tau[2][2212]  = 'AC_VER'         # 0x8A4    # cust-reset.ta zeroes this (1 byte)
 
-_tau[2][2226]  = 'BL_UNLOCKCODE'           # 0x8B2  # RCK
+_tau[2][2226]  = 'RCK'                     # 0x8B2  # BL_UNLOCKCODE
 _tau[2][2227]  = 'STARTUP_SHUTDOWNRESULT'  # 0x8B3
+_tau[2][2228]  = 'CHECKPOINTS_ENABLED'     # 0x8B4
+_tau[2][2229]  = 'CHECKPOINTS_REACHED'     # 0x8B5
 _tau[2][2237]  = 'RESET_LOCK_STATUS'       # 0x8BD
 
-_tau[2][2301]  = 'STARTUP_REASON'          # 0x8FD   # "override unit"
+_tau[2][2301]  = 'STARTUP_REASON'          # 0x8FD   # boot config override unit
 _tau[2][2311]  = 'DISABLE_CHARGE_ONLY'     # 0x907
+_tau[2][2312]  = 'DISABLE_USB_CHARGING'    # 0x908
 _tau[2][2316]  = 'DISABLE_CHARGE_ONLY_ENTERPRISE' # 0x90C  # auto-boot.ta zeroes this (1 byte)
 _tau[2][2330]  = 'OSV_RESTRICTION'         # 0x91A   # 1 byte
+
+_tau[2][2401]  = 'FOTA_STATUS'             # 0x961
+_tau[2][2402]  = 'FOTA_REPART'             # 0x962
 _tau[2][2404]  = 'FOTA_INTERNAL'           # 0x964   # MODEM_CUST_CFG ?? cfg located in system/etc/customization/modem/ -> fota-reset.ta zeroes this
+
+_tau[2][2460]  = 'VIRTUAL_UIM'             # 0x99C
+_tau[2][2470]  = 'ENABLE_USB_ENG_PID'      # 0x9A6
+_tau[2][2471]  = 'ENABLE_USB_DEBUGGING'    # 0x9A7
+_tau[2][2473]  = 'ENABLE_SERIAL_CONSOLE'   # 0x9A9  # value 1 for enable serial console or value 0 (default) to disable (https://forum.xda-developers.com/showpost.php?p=80212371&postcount=1125)
+
 _tau[2][2473]  = 'KERNEL_CMD_DEBUG_MASK'   # 0x9A9   # 1 byte
 _tau[2][2475]  = 'FLASH_LOG'               # 0x9AB   # firmwares history log
 _tau[2][2486]  = 'ENABLE_NONSECURE_USB_DEBUG'  # 0x9B6
+_tau[2][2490]  = 'BATTERY_CAPACITY'        # 0x9BA
+
+_tau[2][2495]  = 'DCMLAC_TRANSMISSION_CONFIG'  # 0x9BF 
+_tau[2][2496]  = 'DCMLAC_SEND_TIME'            # 0x9C0 
+_tau[2][2497]  = 'DCMLAC_UPLOAD_LOG_LATEST'    # 0x9C1 
+_tau[2][2498]  = 'DCMLAC_IDDCONFIG_SW_VERSION' # 0x9C2 
+
 _tau[2][2500]  = 'CREDMGR_KEYTABLE_PRESET' # 0x9C4
+_tau[2][2501]  = 'SECURITY_GA_DATA'        # 0x9C5
 _tau[2][2550]  = 'MASTER_RESET'            # 0x9F6  #
 _tau[2][2551]  = 'BASEBAND_CFG'            # 0x9F7  # cfg located in the modem
 _tau[2][2553]  = 'WIPE_REASON'             # 0x9F9
-_tau[2][2560]  = 'WIFI_MAC'                # 0xA00
-_tau[2][2568]  = 'BLUETOOTH_MAC'           # 0xA08
 
+_tau[2][2560]  = 'WLAN_ADDR_0'             # 0xA00  WIFI_MAC
+_tau[2][2561]  = 'WLAN_ADDR_1'             # 0xA01
+_tau[2][2562]  = 'WLAN_ADDR_2'             # 0xA02
+_tau[2][2563]  = 'WLAN_ADDR_3'             # 0xA03
+
+_tau[2][2564]  = 'WLAN_TXPOWER_2_4G'       # 0xA04
+_tau[2][2565]  = 'WLAN_TXPOWER_5G_LOW'     # 0xA05
+_tau[2][2566]  = 'WLAN_TXPOWER_5G_MID'     # 0xA06
+_tau[2][2567]  = 'WLAN_TXPOWER_5G_HIGH'    # 0xA07
+_tau[2][2568]  = 'BD_ADDR'                 # 0xA08  BLUETOOTH_MAC
+
+_tau[2][2570]  = 'MMS_USER_AGENT'          # 0xA0A
+_tau[2][2571]  = 'MMSC_URL'                # 0xA0B
+
+_tau[2][2585]  = 'LCD_NVM_1'               # 0xA19
+_tau[2][2586]  = 'LCD_NVM_2'               # 0xA1A
+_tau[2][2587]  = 'LCD_NVM_WRITE_COUNT'     # 0xA1B
+_tau[2][2587]  = 'LCD_NVM_HWID'            # 0xA1C
+
+_tau[2][2590]  = 'RETAIL_DEMO_ACTIVE_STATUS'  # 0xA1E
+_tau[2][2595]  = 'PHONE_USAGE_FLAG'           # 0xA23
+_tau[2][2601]  = 'NV_PREF_MODE_I'             # 0xA29
+_tau[2][2602]  = 'NV_LIFE_TIMER_G_I'          # 0xA2A
+_tau[2][2603]  = 'NV_SERVICE_DOMAIN_PREF_I'   # 0xA2B
+_tau[2][4899]  = 'SONY_SERVICE_ID'            # 0x1323
 _tau[2][4900]  = 'SERIAL_NO'               # 0x1324
 _tau[2][4901]  = 'PBA_ID'                  # 0x1325
 _tau[2][4902]  = 'PBA_ID_REV'              # 0x1326
 _tau[2][4908]  = 'PP_SEMC_ITP_PRODUCT_NO'  # 0x132C
 _tau[2][4909]  = 'PP_SEMC_ITP_REV'         # 0x132D
 
+_tau[2][4952]  = 'NFC_CHIP_FW'                # 0x1358
+_tau[2][4953]  = 'NFC_CHIP_VERSION'           # 0x1359
+_tau[2][4960]  = 'GYRO_CALIBRATED'            # 0x1360
+_tau[2][4961]  = 'MPU3050_CALIBRATION_DATA'   # 0x1361
+_tau[2][4962]  = 'MPU6050_CALIBRATION_DATA'   # 0x1362
+_tau[2][4963]  = 'ACCEL_CALIBRATION_DATA'     # 0x1363
+_tau[2][4964]  = 'GYRO_CALIBRATION_DATA'      # 0x1364
+_tau[2][4970]  = 'PROXIMITY_CALIBRATION_DATA' # 0x136A
+
+_tau[2][10022]  = 'THERMAL_SHUTDOWN_COUNT'   # 0x2726
+_tau[2][10023]  = 'THERMAL_LAST_SHUTDOWN_1'  # 0x2727
+_tau[2][10024]  = 'THERMAL_LAST_SHUTDOWN_2'  # 0x2728
+_tau[2][10025]  = 'THERMAL_LAST_SHUTDOWN_3'  # 0x2729
+
 _tau[2][10100] = 'FLASH_MODE'              # 0x2774
+
+_tau[2][10200] = 'FLIP_SLIDE_COUNTER'      # 0x27D8
 
 _tau[2][66667] = 'DEVICE_KEY'              # 0x1046B  # DEVICE_KEY and DRM keys
 _tau[2][66668] = 'REMOTE_LOCK'             # 0x1046C  # a sin file
+_tau[2][66671] = 'GOOGLE_LOCK'             # 0x1046F  # google lock ( allow bootloader unlock in dev settings )
+_tau[2][66673] = 'DEVICE_ID_HMAC_KEY'      # 0x10471  # dev_id HMAC key. Depend on existance of unit, = 0x874 (https://forum.xda-developers.com/showpost.php?p=82983507&postcount=1628)
 
 
 # =============================================================================================

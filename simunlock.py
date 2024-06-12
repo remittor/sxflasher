@@ -47,7 +47,7 @@ class SimUnlock():
         self.blver = sud.getvar('version-bootloader')
         self.serialno = sud.getvar('serialno')
 
-    def magic_func_001(self, u2129, sens_data, S1_LDR):
+    def magic_func_001(self, simlock_sign, simlock, hw_conf):
         # FIXME
         return None
 
@@ -55,19 +55,19 @@ class SimUnlock():
         sud = self.sud
         self.init_vars()
         
-        u2129 = sud.read_ta( [2, 2129] )
+        simlock_sign = sud.read_ta( [2, 2129] ) # SIMLOCK_SIGNATURE
 
-        sens_data = sud.read_ta( [2, 2010] ) # SENS_DATA
+        simlock = sud.read_ta( [2, 2010] )      # SIMLOCK
         
-        S1_LDR = sud.read_ta( [2, 2003] )    # S1_LDR
+        hw_conf = sud.read_ta( [2, 2003] )      # HW_CONF
 
-        # author: the_lazer
-        new_sens_data = self.magic_func_001(u2129, sens_data, S1_LDR)
+        # author: the_lazer ; request to "s1 signature server"
+        new_simlock = self.magic_func_001(simlock_sign, simlock, hw_conf)
 
         if not self.test:
-            ret = sud.write_ta( [2, 2010], new_sens_data )  # 0x278 bytes
+            ret = sud.write_ta( [2, 2010], new_simlock )  # 0x278 bytes
             if ret is None:
-                raise RuntimeError(f'Cannot write to SENS_DATA')
+                raise RuntimeError(f'Cannot write to SIMLOCK unit')
         
             ret = sud.write_ta( [2, 2128], bytes.fromhex('?? ?? ?? ??') )  # 4 bytes
             if ret is None:
@@ -143,8 +143,8 @@ class SimUnlock():
               MiscTA Unit 2237 MUST be erased after the check.
             """
 
-            RCK = bytes.fromhex('?? ' * 0x10)
-            ret = sud.write_ta('BL_UNLOCKCODE', RCK)  # [2:2226]  16 bytes
+            rck = bytes.fromhex('?? ' * 0x10)
+            ret = sud.write_ta('RCK', rck)  # [2:2226]  16 bytes  # BL_UNLOCKCODE
             if ret is None:
                 raise RuntimeError(f'Cannot write to [2:2226]')
         
@@ -168,7 +168,7 @@ class SimUnlock():
         else:
             rt = sud.read_timeout
             wt = sud.write_timeout
-            sud.read_timeout = 5*1000   # 5 seconds
+            sud.read_timeout  = 5*1000  # 5 seconds
             sud.write_timeout = 5*1000  # 5 seconds
 
             ret = sud.command('Sync')

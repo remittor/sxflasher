@@ -687,8 +687,7 @@ class SXFlasher():
         if self.test:
             log.info(f'  Skip "Sync" command! Reason: test = {self.test}')
         else:
-            rt = sud.read_timeout
-            wt = sud.write_timeout
+            trw = sud.get_timeouts()
             sud.read_timeout  = 10*1000  # 10 seconds
             sud.write_timeout = 10*1000  # 10 seconds
 
@@ -696,8 +695,7 @@ class SXFlasher():
             if ret is None:
                 raise RuntimeError(f'Command "Sync" fail: {sud.lastresp}')
             
-            sud.read_timeout = rt
-            sud.write_timeout = wt
+            sud.set_timeouts(trw)
             log.info(f'Command "Sync" completed!')
         
         # ------------ finish -----------------------------------------

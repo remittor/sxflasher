@@ -87,6 +87,16 @@ class SomcUsbDevice():
         #log.debug("Closing USB connection!!!!!!")
         pass
 
+    def set_timeouts(self, timeout):
+        if isinstance(timeout, int):
+            timeout = ( timeout, timeout )
+        
+        self.read_timeout  = timeout[0]
+        self.write_timeout = timeout[1]
+
+    def get_timeouts(self):
+        return ( self.read_timeout, self.write_timeout)
+
     def get_usb_devlist(self, vid, pid):
         dlst = [ ]
         dname = os.path.dirname(os.path.abspath(__file__))
@@ -453,7 +463,7 @@ class SomcUsbDevice():
     def check_signature_cmd(self):        
         self.cmd_sign_with_data_allow = False
         log.debug('check_signature_cmd...')
-        sud.write('signature:00000000')
+        self.write('signature:00000000')
         resp = self.read(onepkt = True)
         log.debug(f'resp: {resp}')
         

@@ -61,7 +61,7 @@ class SimUnlock():
         
         hw_conf = sud.read_ta( [2, 2003] )      # HW_CONF
 
-        # author: the_lazer ; request to "s1 signature server"
+        # author: the_laser ; request to "s1 signature server"
         new_simlock = self.magic_func_001(simlock_sign, simlock, hw_conf)
 
         if not self.test:
@@ -114,7 +114,7 @@ class SimUnlock():
                 raise RuntimeError(f'Flash mode cannot activate!')
 
             """
-            author: the_lazer ; link: https://xdaforums.com/t/3777538/post-76291096
+            author: the_laser ; link: https://xdaforums.com/t/3777538/post-76291096
             
             In order to enable locking/unlocking of the bootloader through
               FG4, the xfl has support for oem lock/unlock commands. When executing
@@ -143,6 +143,7 @@ class SimUnlock():
               MiscTA Unit 2237 MUST be erased after the check.
             """
 
+        if not self.test:
             rck = bytes.fromhex('?? ' * 0x10)
             ret = sud.write_ta('RCK', rck)  # [2:2226]  16 bytes  # BL_UNLOCKCODE
             if ret is None:

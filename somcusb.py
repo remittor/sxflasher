@@ -317,10 +317,14 @@ class SomcUsbDevice():
             
         ep = self.epout
         epaddr = ep.bEndpointAddress
-        #pktsize = ep.wMaxPacketSize        
-        size = 0
-        while size < len(data):
-            size += self.dev.write(epaddr, data if size == 0 else data[size:], timeout = timeout)
+        pktsize = ep.wMaxPacketSize
+        if len(data) <= pktsize:
+            size = self.dev.write(epaddr, data, timeout = timeout)
+        else:
+            size = 0
+            while size < len(data):
+                bsz = pktsize if size + pktsize <= len(data) else len(data) - size 
+                size += self.dev.write(epaddr, data[size:size+bsz], timeout = timeout)
         
         if size != len(data):
             raise RuntimeError(f'USB write error: size = {size}, expected: {len(data)}')
@@ -602,7 +606,7 @@ class SomcUsbDevice():
         resp = self.read(onepkt = True, timeout = timeout)
         if resp.retcode != 0 or resp.errtext != '':
             if sign:
-                print('resp.errtext:', resp.errtext)
+                log.error(f'resp.errtext: "{resp.errtext}"')
                 return False
             raise RuntimeError(f'ERROR on {cmdname} command: {str(self.lastresp)}')
 

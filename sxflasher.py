@@ -24,6 +24,8 @@ class SXFlasher():
         if not self.sud:
             self.sud = somcusb.SomcUsbDevice(loglevel = loglevel)
         self.erase_user_data = False
+        self.flashmode = False
+        self.sync_timeout = 30  # 30 seconds
 
     def connect(self):
         if self.test < 100:
@@ -115,11 +117,21 @@ class SXFlasher():
         ret = self.sud.write_ta('FLASH_MODE', data)
         if ret is None:
             raise RuntimeError(f'Flash mode cannot set to {data}')
+        
+        self.flashmode = True if active else False
 
     def activate_flashmode(self):
         return self.change_flashmode(True)
 
-    def deactivate_flashmode(self):
+    def deactivate_flashmode(self, fin = False):
+        if fin and self.flashmode:
+            try:
+                self.sud.set_timeouts(200)
+                self.change_flashmode(False)
+            except Exception:
+                pass
+            return
+            
         return self.change_flashmode(False)
         
     def get_partition_list(self, source = 'xml'):
@@ -419,12 +431,13 @@ class SXFlasher():
                             raise RuntimeError(f'CMD: signature ==> {sud.lastresp}')
                     
                     log.info('  Signature: OKAY')
-                else:
-                    if osp.splitext(fn)[0] != imgname:
-                        raise RuntimeError(f'File "{sinfn}" contain incorrect filename: "{fn}", expected: "{imgname}"')
-                    
-                    log.info(f'Uploading chunk "{cname}" (size:{len(data)})')
-                    ret = sud.upload(data)
+                    continue  # CMS file processed
+                
+                if osp.splitext(fn)[0] != imgname:
+                    raise RuntimeError(f'File "{sinfn}" contain incorrect filename: "{fn}", expected: "{imgname}"')
+                
+                log.info(f'Uploading chunk "{cname}" (size:{len(data)})')
+                ret = sud.upload(data)
 
                 #if self.test:
                 #    sud.upload(b'')  # erase xboot download buffer
@@ -483,7 +496,7 @@ class SXFlasher():
                     else:
                         ret = sud.command(cmd)
                         if ret is None:
-                            raise RuntimeError(f'Cannot {aux_cmd} image: "{imgname}"')
+                            raise RuntimeError(f'Cannot {aux_cmd} image: "{imgname}". Error: {sud.lastresp}')
 
     def process_ta(self, filename, max_units = None):
         sud = self.sud
@@ -674,8 +687,8 @@ class SXFlasher():
                 log.debug('Firmware history log: \n' + txt.decode('latin-1'))
         
         # ------------ set slot active ----------------------------------
-        if not self.test:
-            slot = sud.set_current_slot(self.currect_slot)
+        if not self.test and self.current_slot is not None:
+            slot = sud.set_current_slot(self.current_slot)
             if slot:
                 log.info(f'Set slot "{slot}" active')
         
@@ -688,8 +701,7 @@ class SXFlasher():
             log.info(f'  Skip "Sync" command! Reason: test = {self.test}')
         else:
             trw = sud.get_timeouts()
-            sud.read_timeout  = 10*1000  # 10 seconds
-            sud.write_timeout = 10*1000  # 10 seconds
+            sud.set_timeouts(self.sync_timeout * 1000) # default: 30 seconds
 
             ret = sud.command('Sync')
             if ret is None:
@@ -708,8 +720,9 @@ if __name__ == '__main__':
     parser.add_option("-d", "--dir", dest = "dir", default = "", type = "string")
     parser.add_option("-t", "--test", dest = "test", default = 1, type = "int")
     parser.add_option("-T", "--timeout", dest = "timeout", default = None, type = "int")
-    parser.add_option("", "--rt", dest = "read_timeout", default = 500, type = "int")
-    parser.add_option("", "--wt", dest = "write_timeout", default = 1000, type = "int")
+    parser.add_option("", "--rt", dest = "read_timeout", default = 4000, type = "int")
+    parser.add_option("", "--wt", dest = "write_timeout", default = 4000, type = "int")
+    parser.add_option("-S", "--sync", dest = "sync_timeout", default = 30, type = "int")
     parser.add_option("-v", "--verbose", dest = "verbose", default = 1, type = "int")
     parser.add_option("-e", "--eud", dest = "erase_user_data", action="store_true", default = False)
     (opt, args) = parser.parse_args() 
@@ -740,6 +753,7 @@ if __name__ == '__main__':
         sxf.sud.write_timeout = wt
         
         sxf.erase_user_data = opt.erase_user_data
+        sxf.sync_timeout = opt.sync_timeout
         
         sxf.flash_stock(opt.dir)
     
@@ -747,12 +761,16 @@ if __name__ == '__main__':
         log.error('CRITICAL ERROR')
         log.set_level(100)
         log.exception('CRITICAL ERROR')
+        if sxf and sxf.flashmode:
+            sxf.deactivate_flashmode(fin = True)
         raise
     
     except KeyboardInterrupt:
         log.error('---- KeyboardInterrupt ----')
         log.set_level(100)
         log.exception('---- KeyboardInterrupt ----')
+        if sxf and sxf.flashmode:
+            sxf.deactivate_flashmode(fin = True)
         raise
 
 

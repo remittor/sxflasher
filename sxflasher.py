@@ -544,6 +544,11 @@ class SXFlasher():
         
         self.activate_flashmode()
 
+        if not self.test:
+            txt = sud.dump_err_log()
+            if txt is None:
+                log.error(f'Cannot get Error log: {sud.lastresp}')
+
         # ------------ Repartition ----------------------------------------
         pdir = self.wdir + os.path.sep + 'partition'
         if not os.path.exists(pdir):
@@ -705,15 +710,17 @@ class SXFlasher():
 
             ret = sud.command('Sync')
             if ret is None:
-                raise RuntimeError(f'Command "Sync" fail: {sud.lastresp}')
+                log.error(f'Command "Sync" fail: {sud.lastresp}')
             
             sud.set_timeouts(trw)
             log.info(f'Command "Sync" completed!')
         
         # ------------ finish -----------------------------------------
         log.info(f'======= Flashing completed ======= test: {self.test}')
+        if not self.test:
+            txt = sud.dump_err_log()
 
-        
+
 if __name__ == '__main__':
     import optparse
     parser = optparse.OptionParser("usage: %prog [options]", add_help_option = False)

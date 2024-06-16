@@ -25,7 +25,7 @@ class SXFlasher():
             self.sud = somcusb.SomcUsbDevice(loglevel = loglevel)
         self.erase_user_data = False
         self.flashmode = False
-        self.sync_timeout = 30  # 30 seconds
+        self.sync_timeout = 60  # 60 seconds
 
     def connect(self):
         if self.test < 100:
@@ -706,7 +706,7 @@ class SXFlasher():
             log.info(f'  Skip "Sync" command! Reason: test = {self.test}')
         else:
             trw = sud.get_timeouts()
-            sud.set_timeouts(self.sync_timeout * 1000) # default: 30 seconds
+            sud.set_timeouts(self.sync_timeout * 1000) # default: 60 seconds
 
             ret = sud.command('Sync')
             if ret is None:
@@ -727,9 +727,9 @@ if __name__ == '__main__':
     parser.add_option("-d", "--dir", dest = "dir", default = "", type = "string")
     parser.add_option("-t", "--test", dest = "test", default = 1, type = "int")
     parser.add_option("-T", "--timeout", dest = "timeout", default = None, type = "int")
-    parser.add_option("", "--rt", dest = "read_timeout", default = 4000, type = "int")
-    parser.add_option("", "--wt", dest = "write_timeout", default = 4000, type = "int")
-    parser.add_option("-S", "--sync", dest = "sync_timeout", default = 30, type = "int")
+    parser.add_option("", "--rt", dest = "read_timeout", default = 6000, type = "int")
+    parser.add_option("", "--wt", dest = "write_timeout", default = 6000, type = "int")
+    parser.add_option("-S", "--sync", dest = "sync_timeout", default = 60, type = "int")
     parser.add_option("-v", "--verbose", dest = "verbose", default = 1, type = "int")
     parser.add_option("-e", "--eud", dest = "erase_user_data", action="store_true", default = False)
     (opt, args) = parser.parse_args() 

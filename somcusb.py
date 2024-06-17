@@ -70,6 +70,7 @@ class SomcUsbDevice():
         log.set_level(loglevel)
         self.read_timeout = 500    # 500 ms
         self.write_timeout = 2000  # 2 seconds
+        self.write_chunk_size = 0  # 0 = wMaxPacketSize
         self.max_download_size = 0
 
     def __del__(self):
@@ -311,13 +312,22 @@ class SomcUsbDevice():
         self.read_all_packets(self.epin)
         return True
 
+    def set_write_chunk_size(self, size):
+        ep = self.epout
+        if size != 0:
+            if size % ep.wMaxPacketSize != 0:
+                raise ValueError(f'Incorrect size of write chunk = {size} bytes!  (EP.OUT.wMaxPacketSize = {ep.wMaxPacketSize})')
+        
+        self.write_chunk_size = size
+        log.info(f'Set write chunk size: {size} bytes  (EP.OUT.wMaxPacketSize = {ep.wMaxPacketSize})')
+
     def raw_write(self, data, timeout = None):
         if timeout is None:
             timeout = self.write_timeout
             
         ep = self.epout
         epaddr = ep.bEndpointAddress
-        pktsize = ep.wMaxPacketSize
+        pktsize = self.write_chunk_size if self.write_chunk_size > 0 else ep.wMaxPacketSize
         if len(data) <= pktsize:
             size = self.dev.write(epaddr, data, timeout = timeout)
         else:

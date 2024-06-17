@@ -643,12 +643,13 @@ class _GordonGateUsb(backend.IBackend):
     @methodtrace(_logger)
     def bulk_write(self, dev_handle, ep, intf, data, timeout):
         payload, bufsize = data.buffer_info()
-        
-        maxPacketSize = dev_handle.dev.wMaxPacketSize
+
         hdev = dev_handle.hdev
-        if maxPacketSize < 128:
-            raise RuntimeError(f'Value maxPacketSize = {maxPacketSize} is too small')
-        
+        #maxPacketSize = dev_handle.dev.wMaxPacketSize
+        #if maxPacketSize < 64:
+        #    raise RuntimeError(f'Value maxPacketSize = {maxPacketSize} is too small')
+        maxPacketSize = 0  # disable multi chunk processing
+
         pos = 0
         while True:
             evt = dev_handle.oWrite
@@ -661,7 +662,10 @@ class _GordonGateUsb(backend.IBackend):
             dwWait = DWORD(-1)
             numOfBytesWrite = DWORD(0)
             addr = payload + pos
-            bsz = maxPacketSize if pos + maxPacketSize <= bufsize else bufsize - pos            
+            if not maxPacketSize:
+                bsz = bufsize
+            else:
+                bsz = maxPacketSize if pos + maxPacketSize <= bufsize else bufsize - pos
 
             # https://learn.microsoft.com/en-US/windows/win32/fileio/testing-for-the-end-of-a-file
             
@@ -710,6 +714,9 @@ class _GordonGateUsb(backend.IBackend):
             pos += numOfBytesWrite.value
             if pos >= bufsize:
                 break
+                
+            if not maxPacketSize:
+                break  # multi chunk processing disabled
 
         if pos != bufsize:
             raise USBError(f'USB Write incomplete! pos = {pos}, expected: {bufsize}', 9900078, 9900078)

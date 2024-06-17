@@ -26,6 +26,7 @@ class SXFlasher():
         self.erase_user_data = False
         self.flashmode = False
         self.sync_timeout = 60  # 60 seconds
+        self.write_chunk_size = 0
 
     def connect(self):
         if self.test < 100:
@@ -37,6 +38,8 @@ class SXFlasher():
             self.sud.cmd_sign_with_data_allow = False
         else:
             self.sud.check_signature_cmd()
+            
+        self.sud.set_write_chunk_size(self.write_chunk_size)
         
     def init_vars(self):
         sud = self.sud
@@ -732,6 +735,7 @@ if __name__ == '__main__':
     parser.add_option("-S", "--sync", dest = "sync_timeout", default = 60, type = "int")
     parser.add_option("-v", "--verbose", dest = "verbose", default = 1, type = "int")
     parser.add_option("-e", "--eud", dest = "erase_user_data", action="store_true", default = False)
+    parser.add_option("-w", "--wcs", dest = "write_chunk_size", default = 0, type = "int")
     (opt, args) = parser.parse_args() 
     
     if not opt.dir:
@@ -761,6 +765,7 @@ if __name__ == '__main__':
         
         sxf.erase_user_data = opt.erase_user_data
         sxf.sync_timeout = opt.sync_timeout
+        sxf.write_chunk_size = opt.write_chunk_size
         
         sxf.flash_stock(opt.dir)
     

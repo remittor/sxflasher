@@ -730,8 +730,8 @@ if __name__ == '__main__':
     parser.add_option("-d", "--dir", dest = "dir", default = "", type = "string")
     parser.add_option("-t", "--test", dest = "test", default = 1, type = "int")
     parser.add_option("-T", "--timeout", dest = "timeout", default = None, type = "int")
-    parser.add_option("", "--rt", dest = "read_timeout", default = 6000, type = "int")
-    parser.add_option("", "--wt", dest = "write_timeout", default = 6000, type = "int")
+    parser.add_option("", "--rt", dest = "read_timeout",  default = 6, type = "int")
+    parser.add_option("", "--wt", dest = "write_timeout", default = 6, type = "int")
     parser.add_option("-S", "--sync", dest = "sync_timeout", default = 60, type = "int")
     parser.add_option("-v", "--verbose", dest = "verbose", default = 1, type = "int")
     parser.add_option("-e", "--eud", dest = "erase_user_data", action="store_true", default = False)
@@ -752,11 +752,11 @@ if __name__ == '__main__':
         sxf.test = opt.test
         
         if opt.timeout:
-            rt = opt.timeout
-            wt = opt.timeout
+            rt = opt.timeout if opt.timeout >= 100 else opt.timeout * 1000
+            wt = opt.timeout if opt.timeout >= 100 else opt.timeout * 1000
         else: 
-            rt = opt.read_timeout
-            wt = opt.write_timeout
+            rt = opt.read_timeout  if opt.read_timeout  >= 100 else opt.read_timeout  * 1000
+            wt = opt.write_timeout if opt.write_timeout >= 100 else opt.write_timeout * 1000
             
         log.info(f'Set read  timeout = {rt} ms')
         sxf.sud.read_timeout = rt

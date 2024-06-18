@@ -728,8 +728,8 @@ if __name__ == '__main__':
     parser.add_option("-a", "--action", dest = "action", default = '', type = "string")
     parser.add_option("-t", "--test", dest = "test", default = 1, type = "int")
     parser.add_option("-T", "--timeout", dest = "timeout", default = None, type = "int")
-    parser.add_option("", "--rt", dest = "read_timeout", default = 500, type = "int")
-    parser.add_option("", "--wt", dest = "write_timeout", default = 1000, type = "int")
+    parser.add_option("", "--rt", dest = "read_timeout",  default = 2, type = "int")
+    parser.add_option("", "--wt", dest = "write_timeout", default = 2, type = "int")
     parser.add_option("-v", "--verbose", dest = "verbose", default = 1, type = "int")
     (opt, args) = parser.parse_args() 
     
@@ -739,11 +739,11 @@ if __name__ == '__main__':
         sud.test = opt.test
         
         if opt.timeout:
-            rt = opt.timeout
-            wt = opt.timeout
+            rt = opt.timeout if opt.timeout >= 100 else opt.timeout * 1000
+            wt = opt.timeout if opt.timeout >= 100 else opt.timeout * 1000
         else: 
-            rt = opt.read_timeout
-            wt = opt.write_timeout
+            rt = opt.read_timeout  if opt.read_timeout  >= 100 else opt.read_timeout  * 1000
+            wt = opt.write_timeout if opt.write_timeout >= 100 else opt.write_timeout * 1000
             
         log.info(f'Set read  timeout = {rt} ms')
         sud.read_timeout = rt

@@ -37,6 +37,7 @@ else:
     from usb.util import endpoint_direction, ENDPOINT_OUT, ENDPOINT_IN
 
 import somcta as ta
+from somcta import TAUnit
 
 import logging
 from logcfg import log
@@ -555,7 +556,7 @@ class SomcUsbDevice():
                 pos += 4
                 size = int.from_bytes(data[pos:pos+4], byteorder = 'big')
                 pos += 4
-                fname = subdir + os.path.sep + f'ta_{product}_{serialno}_{part}_{unit}.dat'
+                fname = subdir + os.path.sep + f'ta_{product}_{serialno}_u{part},{unit}.dat'
                 with open(fname, 'wb') as file:
                     file.write(data[pos:pos+size])
                 pos += size
@@ -639,6 +640,8 @@ class SomcUsbDevice():
         self.raw_read(0, 50)
 
 
+opt = None
+
 def activate_usb_backend_logger(level = logging.DEBUG):
     logger = logging.getLogger('usb')
     logger.setLevel(level)
@@ -721,6 +724,49 @@ def somc_usb_test(sud):
     sud.dump_err_log()
     sud.dump_xbl_log()
 
+def get_ta_unit(opt):
+    if ':' not in opt.unit:
+        raise RuntimeError(f'Incorrect TA-unit address: "{opt.unit}"')
+
+    unit_addr = opt.unit.split(':')
+
+    try:
+        part = int(unit_addr[0])
+        code = int(unit_addr[1])
+    except Exception:
+        raise RuntimeError(f'Incorrect TA-unit address: "{opt.unit}"')
+
+    return TAUnit(part, code)
+
+def set_ta_unit_value(sud, opt, tau = None):
+    if tau:
+        value = tau.value
+    else:    
+        if not opt.unit:
+            raise RuntimeError(f'TA-unit address not specified!')
+        
+        tau = get_ta_unit(opt)
+        if opt.value is None and opt.filename is None:
+            raise RuntimeError(f'Incorrect TA-unit value!')
+
+        if opt.value is not None and opt.filename is not None:
+            raise RuntimeError(f'Incorrect TA-unit value!')
+
+        if opt.filename:
+            with open(opt.filename, 'rb') as file:
+                value = file.read()
+        else:
+            import ast
+            value = ast.literal_eval(f"b'{opt.value}'")
+        
+    cmd = f'Write-TA:{tau.part}:{tau.code}'
+    log.info(f'CMD: {cmd}   <size = {len(value)}>')
+    if opt.test:
+        log.warning(f'----- READONLY MODE ACTIVE! Reason: test = {opt.test} -----')
+        return
+
+    sud.write_ta(tau, value)
+    
 
 if __name__ == '__main__':
     import optparse
@@ -731,6 +777,13 @@ if __name__ == '__main__':
     parser.add_option("", "--rt", dest = "read_timeout",  default = 2, type = "int")
     parser.add_option("", "--wt", dest = "write_timeout", default = 2, type = "int")
     parser.add_option("-L", "--loglevel", dest = "loglevel", default = 0, type = "int")
+    parser.add_option("-c", "--cmd", dest = "cmd", default = None, type = "string")
+    parser.add_option("-r", "--read", dest="read", action="store_true", default = False)
+    parser.add_option("-w", "--write", dest="write", action="store_true", default = False)
+    parser.add_option("-u", "--unit", dest = "unit", default = None, type = "string")
+    parser.add_option("-v", "--value", dest = "value", default = None, type = "string")
+    parser.add_option("-f", "--file", dest = "filename", default = None, type = "string")
+    parser.add_option("", "--ta", dest = "ta_file", default = None, type = "string")
     (opt, args) = parser.parse_args() 
     
     try:
@@ -752,14 +805,70 @@ if __name__ == '__main__':
 
         sud.connect()
 
-        if opt.action == '':
+        if opt.read and opt.write:
+            raise RuntimeError(f'Incorrect cmdline options! Cannot using read and write options!')
+
+        if opt.action == 'test':
+            log.info(f'----- action: somc_usb_test ------')
             somc_usb_test(sud)
 
-        if opt.action == 'dumpta':
+        elif opt.action == 'dumpta':
+            log.info(f'----- action: dump_all_ta ------')
             sud.dump_all_ta()
         
-        if opt.action == 'pwdn' or opt.action == 'powerdown':
+        elif opt.action == 'pwdn' or opt.action == 'powerdown':
+            log.info(f'----- action: powerdown ------')
             sud.powerdown()
+
+        elif opt.cmd:
+            log.info(f'----- action: command ------')
+            res = sud.command(opt.cmd.encode('latin-1'))
+            if res is None:
+                log.error(f'Command "{opt.cmd}" failed! Error: {self.lastresp}')
+            if isinstance(res, bytes):
+                if opt.filename:
+                    with open(opt.filename, 'wb') as file:
+                        file.write(res)
+                    log.info(f'Result of command "{opt.cmd}" saved to "{opt.filename}"')
+        
+        elif opt.read and opt.unit:
+            log.info(f'----- action: read_ta ------')
+            tau = get_ta_unit(opt)
+            res = sud.read_ta(tau)
+            if res is None:
+                log.error(f'Cannot read TA-unit {tau.part}:{tau.code} ! Error: {self.lastresp}')
+            if isinstance(res, bytes):
+                if opt.filename:
+                    with open(opt.filename, 'wb') as file:
+                        file.write(res)
+                    log.info(f'Value of TA-unit {tau.part}:{tau.code} saved to "{opt.filename}"')
+        
+        elif opt.write and (opt.unit or opt.filename):
+            log.info(f'----- action: set_ta_unit_value ------')
+            if not opt.unit and opt.filename:
+                fname = os.path.basename(opt.filename)
+                if '_u1,' in fname or '_u2,' in fname:
+                    import re
+                    x = re.search(r'_u([0-9]),([0-9]+)', fname)
+                    if not x:
+                        raise RuntimeError(f'Cannot determine TA-unit address!')
+                    part = int(x.group(1))
+                    code = int(x.group(2))
+                    log.debug(f'TA-unit addr = {part}:{code}')
+                    opt.unit = f'{part}:{code}'
+                    pass
+            set_ta_unit_value(sud, opt)
+        
+        elif opt.write and opt.ta_file:
+            log.info(f'----- action: set_ta_unit_value (TA) ------')
+            taulist = ta.load_from_file(opt.ta_file)
+            if not taulist:
+                raise RuntimeError(f'Incorrect ta-file "{opt.ta_file}"')
+            for tau in taulist:
+                set_ta_unit_value(sud, opt, tau)
+        
+        else:
+            log.error(f'Incorrect cmdline options!')
     
     except Exception:
         log.error('CRITICAL ERROR')

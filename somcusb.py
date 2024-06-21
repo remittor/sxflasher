@@ -725,14 +725,18 @@ def somc_usb_test(sud):
     sud.dump_xbl_log()
 
 def get_ta_unit(opt):
-    if ':' not in opt.unit:
+    if len(opt.unit.strip()) < 3:
         raise RuntimeError(f'Incorrect TA-unit address: "{opt.unit}"')
 
-    unit_addr = opt.unit.split(':')
+    if opt.unit[0] != '1' and opt.unit[0] != '2':
+        raise RuntimeError(f'Incorrect TA-unit address: "{opt.unit}"')
+
+    if opt.unit[1] != ':' and opt.unit[1] != ',' and opt.unit[1] != '/':
+        raise RuntimeError(f'Incorrect TA-unit address: "{opt.unit}"')
 
     try:
-        part = int(unit_addr[0])
-        code = int(unit_addr[1])
+        part = int(opt.unit[0])
+        code = int(opt.unit[2:])
     except Exception:
         raise RuntimeError(f'Incorrect TA-unit address: "{opt.unit}"')
 

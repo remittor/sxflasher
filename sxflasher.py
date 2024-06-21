@@ -733,7 +733,7 @@ if __name__ == '__main__':
     parser.add_option("", "--rt", dest = "read_timeout",  default = 6, type = "int")
     parser.add_option("", "--wt", dest = "write_timeout", default = 6, type = "int")
     parser.add_option("-S", "--sync", dest = "sync_timeout", default = 60, type = "int")
-    parser.add_option("-v", "--verbose", dest = "verbose", default = 1, type = "int")
+    parser.add_option("-L", "--loglevel", dest = "loglevel", default = 0, type = "int")
     parser.add_option("-e", "--eud", dest = "erase_user_data", action="store_true", default = False)
     parser.add_option("-w", "--wcs", dest = "write_chunk_size", default = 0, type = "int")
     (opt, args) = parser.parse_args() 
@@ -747,7 +747,7 @@ if __name__ == '__main__':
         exit(1)
      
     try:
-        loglevel = logging.DEBUG if opt.verbose else logging.INFO
+        loglevel = opt.loglevel  # https://docs.python.org/3/library/logging.html#logging-levels
         sxf = SXFlasher(loglevel = loglevel)
         sxf.test = opt.test
         

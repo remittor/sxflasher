@@ -730,11 +730,11 @@ if __name__ == '__main__':
     parser.add_option("-T", "--timeout", dest = "timeout", default = None, type = "int")
     parser.add_option("", "--rt", dest = "read_timeout",  default = 2, type = "int")
     parser.add_option("", "--wt", dest = "write_timeout", default = 2, type = "int")
-    parser.add_option("-v", "--verbose", dest = "verbose", default = 1, type = "int")
+    parser.add_option("-L", "--loglevel", dest = "loglevel", default = 0, type = "int")
     (opt, args) = parser.parse_args() 
     
     try:
-        loglevel = logging.DEBUG if opt.verbose else logging.INFO
+        loglevel = opt.loglevel  # https://docs.python.org/3/library/logging.html#logging-levels
         sud = SomcUsbDevice(loglevel = loglevel)
         sud.test = opt.test
         
